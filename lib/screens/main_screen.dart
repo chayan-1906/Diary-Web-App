@@ -1,3 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:diary_web_app/models/user_model.dart';
+import 'package:diary_web_app/widgets/loading.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
@@ -85,44 +89,60 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
               // TODO: CREATE PROFILE
-              Container(
-                child: Row(
-                  children: [
-                    Column(
-                      children: const [
-                        Expanded(
-                          child: InkWell(
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: CircleAvatar(
-                                radius: 30.0,
-                                backgroundImage: NetworkImage(
-                                    'https://picsum.photos/200/300'),
-                                backgroundColor: Colors.transparent,
+              StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Loading();
+                    }
+                    final usersListStream = snapshot.data.docs.map((docs) {
+                      return UserModel.fromDocument(docs);
+                    }).where((userModel) {
+                      return (userModel.uid ==
+                          FirebaseAuth.instance.currentUser.uid);
+                    }).toList();
+                    UserModel currentUser = usersListStream[0];
+                    return Container(
+                      child: Row(
+                        children: [
+                          Column(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: CircleAvatar(
+                                      radius: 30.0,
+                                      backgroundImage:
+                                          NetworkImage(currentUser.avatarUrl),
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                  ),
+                                ),
                               ),
+                              Text(
+                                currentUser.displayName,
+                                style: const TextStyle(
+                                  fontFamily: 'ArialRounded',
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () {},
+                            icon: const Icon(
+                              Icons.power_settings_new_rounded,
+                              color: Colors.redAccent,
+                              size: 19.0,
                             ),
                           ),
-                        ),
-                        Text(
-                          'P.Das',
-                          style: TextStyle(
-                            fontFamily: 'ArialRounded',
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.power_settings_new_rounded,
-                        color: Colors.redAccent,
-                        size: 19.0,
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    );
+                  }),
             ],
           ),
         ],

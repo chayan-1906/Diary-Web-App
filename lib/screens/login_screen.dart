@@ -1,11 +1,20 @@
+import 'package:diary_web_app/widgets/create_account_form.dart';
 import 'package:diary_web_app/widgets/login_form.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key key}) : super(key: key);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool isCreateAccountClicked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +44,44 @@ class LoginScreen extends StatelessWidget {
                 SizedBox(
                   width: 300.0,
                   height: 300.0,
-                  child: LoginForm(
-                    emailController: _emailController,
-                    passwordController: _passwordController,
-                    formKey: _formKey,
+                  child: isCreateAccountClicked
+                      ? CreateAccountForm(
+                          emailController: _emailController,
+                          passwordController: _passwordController,
+                          formKey: _formKey,
+                        )
+                      : LoginForm(
+                          emailController: _emailController,
+                          passwordController: _passwordController,
+                          formKey: _formKey,
+                        ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      isCreateAccountClicked = !isCreateAccountClicked;
+                      // if (isCreateAccountClicked) {
+                      //   isCreateAccountClicked = false;
+                      // } else {
+                      //   isCreateAccountClicked = true;
+                      // }
+                    });
+                  },
+                  icon: Icon(Icons.portrait_rounded, color: Colors.deepOrange),
+                  label: Text(
+                    isCreateAccountClicked
+                        ? 'Already have an account?'
+                        : 'Create Account',
+                    style: const TextStyle(
+                      fontFamily: 'ArialRounded',
+                      fontSize: 18.0,
+                      color: Colors.deepOrange,
+                      fontWeight: FontWeight.bold,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
+                const SizedBox(height: 15.0),
               ],
             ),
             Expanded(

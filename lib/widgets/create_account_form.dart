@@ -1,12 +1,12 @@
 import 'package:diary_web_app/screens/main_screen.dart';
+import 'package:diary_web_app/services/diary_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'input_decorator.dart';
 
-class LoginForm extends StatelessWidget {
-  const LoginForm({
+class CreateAccountForm extends StatelessWidget {
+  const CreateAccountForm({
     Key key,
     @required TextEditingController emailController,
     @required TextEditingController passwordController,
@@ -27,6 +27,13 @@ class LoginForm extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const Text(
+            'Please enter a valid email and password',
+            style: TextStyle(
+              fontFamily: 'ArialRounded',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           // email textformfield
           Padding(
             padding: const EdgeInsets.all(15.0),
@@ -73,26 +80,44 @@ class LoginForm extends StatelessWidget {
             ),
             onPressed: () {
               if (_formKey.currentState.validate()) {
+                String email = _emailController.text;
                 FirebaseAuth.instance
-                    .signInWithEmailAndPassword(
-                  email: _emailController.text,
+                    .createUserWithEmailAndPassword(
+                  email: email,
                   password: _passwordController.text,
                 )
-                    .then((value) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const MainScreen(),
-                    ),
-                  );
+                    .then((value) async {
+                  if (value.user != null) {
+                    String uid = value.user.uid;
+                    DiaryService()
+                        .createUser(
+                      context: context,
+                      uid: uid,
+                      displayName: email.split('@')[0],
+                    )
+                        .then((value) {
+                      DiaryService()
+                          .loginUser(
+                        email: email,
+                        password: _passwordController.text,
+                      )
+                          .then((value) {
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const MainScreen()));
+                      });
+                    });
+                  }
                 });
               }
             },
             icon: const Icon(Icons.login_rounded),
-            label: const Text('Sign in',
-                style: TextStyle(
-                  fontFamily: 'ArialRounded',
-                  fontWeight: FontWeight.bold,
-                )),
+            label: const Text(
+              'Create Account',
+              style: TextStyle(
+                fontFamily: 'ArialRounded',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
