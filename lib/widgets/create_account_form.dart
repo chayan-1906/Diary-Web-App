@@ -89,6 +89,7 @@ class CreateAccountForm extends StatelessWidget {
                     .then((value) async {
                   if (value.user != null) {
                     String uid = value.user.uid;
+                    print(uid);
                     DiaryService()
                         .createUser(
                       context: context,

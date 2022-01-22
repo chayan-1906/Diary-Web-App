@@ -1,6 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:diary_web_app/models/diary_model.dart';
 import 'package:diary_web_app/models/user_model.dart';
-import 'package:diary_web_app/widgets/loading.dart';
+import 'package:diary_web_app/services/diary_service.dart';
+import 'package:diary_web_app/widgets/create_profile.dart';
+import 'package:diary_web_app/widgets/diary_listview.dart';
+import 'package:diary_web_app/widgets/write_dialog_diary.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
@@ -14,6 +18,12 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   String _dropDownText;
+  final TextEditingController _titleTextController = TextEditingController();
+  final TextEditingController _descriptionTextController =
+      TextEditingController();
+  DateTime selectedDate = DateTime.now();
+  var userDiaryFilteredEntriesList;
+  List<DiaryModel> _listOfDiaries = [];
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +105,7 @@ class _MainScreenState extends State<MainScreen> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Loading();
+                      return const CircularProgressIndicator();
                     }
                     final usersListStream = snapshot.data.docs.map((docs) {
                       return UserModel.fromDocument(docs);
@@ -104,44 +114,7 @@ class _MainScreenState extends State<MainScreen> {
                           FirebaseAuth.instance.currentUser.uid);
                     }).toList();
                     UserModel currentUser = usersListStream[0];
-                    return Container(
-                      child: Row(
-                        children: [
-                          Column(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: CircleAvatar(
-                                      radius: 30.0,
-                                      backgroundImage:
-                                          NetworkImage(currentUser.avatarUrl),
-                                      backgroundColor: Colors.transparent,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                currentUser.displayName,
-                                style: const TextStyle(
-                                  fontFamily: 'ArialRounded',
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: const Icon(
-                              Icons.power_settings_new_rounded,
-                              color: Colors.redAccent,
-                              size: 19.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    return CreateProfile(currentUser: currentUser);
                   }),
             ],
           ),
@@ -150,7 +123,7 @@ class _MainScreenState extends State<MainScreen> {
       body: Row(
         children: [
           Expanded(
-            flex: 1,
+            flex: 4,
             child: Container(
               height: MediaQuery.of(context).size.height,
               decoration: const BoxDecoration(
@@ -194,6 +167,24 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       todayHighlightColor: Colors.greenAccent,
                       onSelectionChanged: (dateRangePickerSelection) {
+                        setState(() {
+                          selectedDate = dateRangePickerSelection.value;
+                          _listOfDiaries.clear();
+                          userDiaryFilteredEntriesList =
+                              DiaryService().getSameDateDiaries(
+                            first: Timestamp.fromDate(selectedDate).toDate(),
+                            userId: FirebaseAuth.instance.currentUser.uid,
+                          );
+                          userDiaryFilteredEntriesList.then((value) {
+                            for (var item in value) {
+                              // print('Diary => ${item.title}');
+                              setState(() {
+                                _listOfDiaries.add(item);
+                              });
+                            }
+                          });
+                        });
+                        // print('userDiaryFilteredEntriesList: ${userDiaryFilteredEntriesList.toString()}');
                         // setState(() {
                         // selectedDate = dateRangePickerSelection.value;
                         // _listOfDiaries.clear();
@@ -220,7 +211,18 @@ class _MainScreenState extends State<MainScreen> {
                     child: Card(
                       elevation: 4.0,
                       child: TextButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return WriteDiaryDialog(
+                                  selectedDate: selectedDate,
+                                  titleTextController: _titleTextController,
+                                  descriptionTextController:
+                                      _descriptionTextController,
+                                );
+                              });
+                        },
                         icon: Icon(
                           Icons.add_rounded,
                           size: 30.0,
@@ -246,41 +248,12 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           Expanded(
-            flex: 3,
-            child: Container(
-              // color: Colors.lightBlueAccent,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Container(
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: 5,
-                              itemBuilder:
-                                  (BuildContext buildContext, int index) {
-                                return SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.4,
-                                  child: Card(
-                                    color: Colors.orangeAccent.shade100,
-                                    child: ListTile(
-                                      title: Text('Hello'),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            flex: 10,
+            child: DiaryListView(
+              listOfDiaries: _listOfDiaries,
+              selectedDate: selectedDate,
             ),
-          )
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

@@ -72,20 +72,22 @@ class LoginForm extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              if (_formKey.currentState.validate()) {
-                FirebaseAuth.instance
-                    .signInWithEmailAndPassword(
-                  email: _emailController.text,
-                  password: _passwordController.text,
-                )
-                    .then((value) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const MainScreen(),
-                    ),
-                  );
-                });
-              }
+              // if (_formKey.currentState.validate()) {
+              FirebaseAuth.instance
+                  .signInWithEmailAndPassword(
+                // email: _emailController.text,
+                // password: _passwordController.text,
+                email: 'a@gmail.com',
+                password: 'abcdef',
+              )
+                  .then((value) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const MainScreen(),
+                  ),
+                );
+              });
+              // }
             },
             icon: const Icon(Icons.login_rounded),
             label: const Text('Sign in',
